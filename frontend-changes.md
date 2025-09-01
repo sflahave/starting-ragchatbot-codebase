@@ -1,125 +1,234 @@
-# Frontend Changes - Code Quality Tools Implementation
+# Frontend Development Enhancement Changes
 
-## Overview
+This document consolidates changes from two major feature branches that enhance both code quality tooling and testing capabilities for the RAG system.
+
+## Part 1: Code Quality Tools Implementation
+
+### Overview
 Added essential code quality tools to the development workflow to ensure consistent code formatting and maintain code quality standards across the codebase.
 
-## Changes Made
+### Dependencies Added
+- **`black>=24.0.0`**: Python code formatter for consistent styling
+- **`flake8>=6.0.0`**: Linting tool to catch code quality issues and style violations
+- **`isort>=5.12.0`**: Import statement organizer and sorter
 
-### 1. Dependencies Added
-Updated `pyproject.toml` to include:
-- **black>=24.0.0** - Code formatter for consistent Python code styling
-- **flake8>=6.0.0** - Linting tool for code quality checks
-- **isort>=5.12.0** - Import organization tool
+### Code Formatting Configuration
 
-### 2. Configuration Added
-Added configuration sections to `pyproject.toml`:
+#### Black Configuration (`pyproject.toml`)
+- **Line length**: 88 characters (black's default, optimized for readability)
+- **Target version**: Python 3.13
+- **File inclusion**: `.py` and `.pyi` files
+- **Exclusions**: Standard directories (`.eggs`, `.git`, `.venv`, `build`, `dist`, etc.)
 
-#### Black Configuration
-- Line length: 88 characters
-- Target version: Python 3.13
-- Excludes common directories (.git, build, dist, etc.)
+#### isort Configuration (`pyproject.toml`)
+- **Profile**: "black" (ensures compatibility with black formatting)
+- **Multi-line output**: Mode 3 (vertical hanging indent)
+- **Line length**: 88 (matches black)
+- **First-party modules**: "backend" (treats backend modules as first-party)
 
-#### Isort Configuration
-- Black-compatible profile
-- Line length: 88 characters
-- Multi-line output format: 3
-- First-party packages: ["backend"]
+#### Flake8 Configuration (`.flake8`)
+- **Max line length**: 88 (compatible with black)
+- **Ignored errors**:
+  - `E203`: Whitespace before ':' (conflicts with black)
+  - `W503`: Line break before binary operator (black's preference)
+  - `E501`: Line too long (handled by black)
+- **Excluded directories**: Standard exclusions matching black configuration
 
-#### Flake8 Configuration
-- Max line length: 88 characters
-- Ignores Black-compatible formatting rules (E203, W503)
-- Excludes common directories
+### Development Scripts
 
-### 3. Development Scripts Created
-Created `scripts/` directory with executable shell scripts:
-
-#### `scripts/format.sh`
-- Runs black code formatter
-- Organizes imports with isort
-- Provides friendly status messages
-
-#### `scripts/lint.sh`
-- Runs flake8 linting checks
-- Shows source code and statistics
-- Provides clear feedback
-
-#### `scripts/quality-check.sh`
-- Comprehensive quality check script
-- Validates code formatting (black --check)
-- Validates import organization (isort --check-only)
-- Runs linting checks (flake8)
-- Runs test suite (pytest)
-- Exits on first failure with clear error messages
-- Provides success confirmation when all checks pass
-
-### 4. Code Formatting Applied
-- Formatted all existing Python files with black (16 files reformatted)
-- Organized imports in all Python files with isort (15 files fixed)
-- Ensured consistent code style across the entire codebase
-
-### 5. Documentation Updates
-Updated `CLAUDE.md` with new sections:
-
-#### Code Quality & Formatting Section
-- Added script usage instructions
-- Provided manual command alternatives
-- Clear descriptions of each tool's purpose
-
-#### Environment Setup Updates
-- Added information about code quality tools
-- Specified configuration details (line length, tools used)
-
-## Usage
-
-### Quick Commands
+#### Format Script (`scripts/format.sh`)
 ```bash
-# Format code
-./scripts/format.sh
-
-# Check linting
-./scripts/lint.sh
-
-# Run all quality checks
-./scripts/quality-check.sh
-```
-
-### Manual Commands
-```bash
-# Format with black
+#!/bin/bash
+echo "Formatting Python code with black..."
 uv run black .
 
-# Organize imports
+echo "Organizing imports with isort..."
 uv run isort .
 
-# Check linting
+echo "Code formatting complete!"
+```
+
+#### Linting Script (`scripts/lint.sh`)
+```bash
+#!/bin/bash
+echo "Running flake8 linting..."
 uv run flake8 .
 ```
 
-## Benefits
+#### Quality Check Script (`scripts/quality-check.sh`)
+```bash
+#!/bin/bash
+set -e
 
-1. **Consistency**: All code follows the same formatting standards
-2. **Quality**: Linting catches potential issues early
-3. **Automation**: Scripts make it easy to maintain code quality
-4. **Integration**: Tools work together seamlessly (black + isort + flake8)
-5. **Documentation**: Clear instructions for developers
+echo "Starting quality checks..."
 
-## Files Modified
+echo "1. Formatting code with black..."
+uv run black . --check --diff
 
-- `pyproject.toml` - Added dependencies and tool configurations
-- `CLAUDE.md` - Added development commands section
-- All Python files - Formatted with black and isort
+echo "2. Checking import organization..."
+uv run isort . --check-only --diff
 
-## Files Created
+echo "3. Running flake8 linting..."
+uv run flake8 .
 
+echo "4. Running tests..."
+cd backend && python -m pytest
+
+echo "All quality checks passed!"
+```
+
+## Part 2: Testing Framework Enhancement
+
+### Overview
+Enhanced the existing testing framework for the RAG system by adding comprehensive API testing infrastructure. These changes primarily improve the backend testing capabilities which support the frontend functionality.
+
+### Enhanced Dependencies (`pyproject.toml`)
+- **Added**: `httpx>=0.27.0` for FastAPI TestClient support
+- **Added**: Complete pytest configuration section with:
+  - Test discovery settings (`testpaths`, `python_files`, etc.)
+  - Cleaner output formatting (`-v --tb=short --strict-markers`)
+  - Test markers for organization (`unit`, `integration`, `api`)
+
+### Shared Test Fixtures (`backend/tests/conftest.py`)
+Created comprehensive test fixtures to support API testing:
+
+#### Key Fixtures:
+- **`test_app`**: Creates a standalone FastAPI app without static file mounting
+  - Resolves the static file path issues mentioned in requirements
+  - Includes all API endpoints (/api/query, /api/courses, /api/clear-session)
+  - Uses mocked RAG system to avoid dependencies
+  
+- **`client`**: TestClient instance for making HTTP requests
+- **`mock_rag_system`**: Fully mocked RAG system with controlled responses
+- **`test_config`**: Test-specific configuration with temporary directories
+- **`sample_test_data`**: Reusable test data for API requests and responses
+- **`temp_directory`**: Automatic cleanup of temporary test files
+- **`course_test_document`**: Sample course content for integration tests
+- **`clean_environment`**: Automatic environment variable cleanup
+
+### API Endpoint Tests (`backend/tests/test_api_endpoints.py`)
+Comprehensive API test suite with 3 test classes:
+
+#### `TestAPIEndpoints`:
+- **Root endpoint** (`GET /`): Basic connectivity test
+- **Query endpoint** (`POST /api/query`):
+  - With and without session ID
+  - Invalid request handling
+  - Empty query handling
+  - Server error scenarios
+- **Courses endpoint** (`GET /api/courses`):
+  - Successful response validation
+  - Server error handling
+- **Clear session endpoint** (`POST /api/clear-session`):
+  - With and without session ID
+  - Error handling
+- **CORS and content-type validation**
+
+#### `TestAPIRequestValidation`:
+- Field type validation for all request models
+- Extra field handling
+- Proper error response codes (422 for validation errors)
+
+#### `TestAPIResponseFormats`:
+- Response structure validation for all endpoints
+- Data type verification
+- Error response format consistency
+
+## Technical Solutions
+
+### Static File Mounting Issue Resolution
+The original `backend/app.py` mounts static files from `../frontend`, which causes path issues during testing. Our solution:
+
+1. **Separate Test App**: Created a dedicated test app in `conftest.py` that:
+   - Includes all the same API endpoints
+   - Skips static file mounting entirely
+   - Uses mocked RAG system for predictable behavior
+
+2. **Benefits**:
+   - Tests run reliably from any directory
+   - No dependency on frontend files during API testing
+   - Faster test execution (no file system operations)
+   - Isolated testing environment
+
+### Mocking Strategy
+- **RAG System**: Fully mocked to avoid database dependencies
+- **Anthropic API**: Mocked to prevent external API calls
+- **File System**: Uses temporary directories for any file operations
+- **Environment**: Automatic cleanup between tests
+
+## Combined Benefits
+
+### Code Quality
+- **Consistency**: Uniform code style across the entire codebase
+- **Readability**: Black's opinionated formatting improves code readability
+- **Maintainability**: Consistent formatting reduces cognitive load during code review
+- **Error Prevention**: Flake8 catches potential issues before they become bugs
+
+### Testing Infrastructure
+1. **API Reliability**: Comprehensive API testing ensures the backend endpoints that the frontend relies on work correctly
+2. **Contract Testing**: Validates request/response formats that the frontend expects
+3. **Error Handling**: Tests error scenarios that the frontend needs to handle gracefully
+4. **Development Speed**: Fast-running API tests for quick validation during development
+5. **Regression Prevention**: Prevents backend changes from breaking frontend functionality
+
+## Usage Instructions
+
+### Daily Development
+```bash
+# Format code before committing
+./scripts/format.sh
+
+# Check code quality
+./scripts/quality-check.sh
+
+# Just run linting
+./scripts/lint.sh
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+cd backend && python -m pytest
+
+# Run only API tests
+cd backend && python -m pytest -m api
+
+# Run with verbose output
+cd backend && python -m pytest -v
+
+# Run specific test file
+cd backend && python -m pytest tests/test_api_endpoints.py
+```
+
+### Test Markers
+The following markers are available:
+- `@pytest.mark.api`: API endpoint tests
+- `@pytest.mark.unit`: Unit tests (existing)
+- `@pytest.mark.integration`: Integration tests (existing)
+
+## Files Added/Modified
+
+### New Files:
+- `.flake8` - Flake8 linting configuration
 - `scripts/format.sh` - Code formatting script
 - `scripts/lint.sh` - Linting script  
 - `scripts/quality-check.sh` - Comprehensive quality check script
+- `backend/tests/conftest.py` - Shared test fixtures
+- `backend/tests/test_api_endpoints.py` - API endpoint tests
 - `frontend-changes.md` - This documentation file
+
+### Modified Files:
+- `pyproject.toml` - Added all quality tools and testing dependencies
+- `CLAUDE.md` - Updated with quality commands and usage instructions
+- All backend Python files - Reformatted and cleaned up
 
 ## Next Steps
 
 Developers should:
 1. Run `./scripts/format.sh` before committing changes
 2. Run `./scripts/quality-check.sh` to ensure all quality standards are met
-3. Consider adding pre-commit hooks for automated quality checks
-4. Use the quality check script in CI/CD pipelines
+3. Add frontend-specific test files for JavaScript functionality
+4. Create end-to-end tests that test the full frontend-backend integration
+5. Consider adding pre-commit hooks for automated quality checks
+6. Use the quality check script in CI/CD pipelines
