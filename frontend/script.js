@@ -5,7 +5,7 @@ const API_URL = '/api';
 let currentSessionId = null;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, totalCourses, courseTitles, newChatButton;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton = document.getElementById('sendButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
+    newChatButton = document.getElementById('newChatButton');
     
     setupEventListeners();
     createNewSession();
@@ -29,6 +30,8 @@ function setupEventListeners() {
         if (e.key === 'Enter') sendMessage();
     });
     
+    // New chat button
+    newChatButton.addEventListener('click', startNewChat);
     
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
@@ -122,10 +125,24 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     let html = `<div class="message-content">${displayContent}</div>`;
     
     if (sources && sources.length > 0) {
+        // Handle both old string format and new object format for backward compatibility
+        const formattedSources = sources.map(source => {
+            if (typeof source === 'string') {
+                // Old format - plain string
+                return escapeHtml(source);
+            } else if (source.url) {
+                // New format with URL - create clickable link
+                return `<a href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.text)}</a>`;
+            } else {
+                // New format without URL - plain text
+                return escapeHtml(source.text);
+            }
+        });
+        
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${formattedSources.join(', ')}</div>
             </details>
         `;
     }
@@ -150,6 +167,38 @@ async function createNewSession() {
     currentSessionId = null;
     chatMessages.innerHTML = '';
     addMessage('Welcome to the Course Materials Assistant! I can help you with questions about courses, lessons and specific content. What would you like to know?', 'assistant', null, true);
+}
+
+async function startNewChat() {
+    try {
+        // Clear session on backend if we have a current session
+        if (currentSessionId) {
+            await fetch(`${API_URL}/clear-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: currentSessionId
+                })
+            });
+        }
+        
+        // Clear the current session on frontend
+        await createNewSession();
+        
+        // Focus on the input field for user convenience
+        if (chatInput) {
+            chatInput.focus();
+        }
+    } catch (error) {
+        console.error('Error starting new chat:', error);
+        // Fallback to frontend-only clearing if backend fails
+        await createNewSession();
+        if (chatInput) {
+            chatInput.focus();
+        }
+    }
 }
 
 // Load course statistics

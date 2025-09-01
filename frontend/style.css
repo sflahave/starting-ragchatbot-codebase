@@ -245,6 +245,36 @@ header h1 {
     color: var(--text-secondary);
 }
 
+/* Source Links Styling, why not this work */
+.sources-content a {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    padding: 0.375rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0.125rem 0.25rem 0.125rem 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.sources-content a:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.sources-content a:active {
+    transform: translateY(0);
+}
+
+.sources-content a:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring), 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
 /* Markdown formatting styles */
 .message-content h1,
 .message-content h2,
@@ -462,13 +492,32 @@ header h1 {
     letter-spacing: 0.5px;
 }
 
+/* New Chat Button */
+.new-chat-button {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    border: none;
+    background: none;
+    outline: none;
+    transition: color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 100%;
+    text-align: left;
+}
+
 .stats-header:focus,
-.suggested-header:focus {
+.suggested-header:focus,
+.new-chat-button:focus {
     color: var(--primary-color);
 }
 
 .stats-header:hover,
-.suggested-header:hover {
+.suggested-header:hover,
+.new-chat-button:hover {
     color: var(--primary-color);
 }
 
