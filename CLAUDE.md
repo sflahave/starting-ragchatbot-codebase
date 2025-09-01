@@ -9,10 +9,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Manual start**: `cd backend && uv run uvicorn app:app --reload --port 8000`
 - **Install dependencies**: `uv sync`
 
+### Code Quality & Formatting
+- **Format code**: `scripts/format.sh` - Auto-formats code with black and organizes imports with isort
+- **Lint code**: `scripts/lint.sh` - Runs flake8 linting checks
+- **Quality check**: `scripts/quality-check.sh` - Runs full quality suite (formatting, linting, tests)
+- **Manual commands**:
+  - `uv run black .` - Format code with black
+  - `uv run isort .` - Organize imports
+  - `uv run flake8 .` - Run linting checks
+
 ### Environment Setup
 - Create `.env` file with `ANTHROPIC_API_KEY=your_key_here`
 - Uses Python 3.13+ with uv package manager
-- No test framework is currently configured
+- Code formatting: black (line length 88), isort for import organization
+- Linting: flake8 with black-compatible settings
 
 ## Architecture Overview
 
